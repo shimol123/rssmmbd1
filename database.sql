@@ -1,0 +1,66 @@
+CREATE TABLE IF NOT EXISTS users (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ name VARCHAR(100) NOT NULL,
+ email VARCHAR(190) NOT NULL UNIQUE,
+ password_hash VARCHAR(255) NOT NULL,
+ balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+ role ENUM('user','admin') NOT NULL DEFAULT 'user',
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS settings (
+ setting_key VARCHAR(100) PRIMARY KEY,
+ setting_value TEXT NULL,
+ updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS services (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ provider_service_id VARCHAR(80) NOT NULL UNIQUE,
+ name VARCHAR(255) NOT NULL,
+ category VARCHAR(120) NOT NULL DEFAULT 'Imported',
+ rate DECIMAL(12,4) NOT NULL DEFAULT 0,
+ min_qty INT UNSIGNED NOT NULL DEFAULT 1,
+ max_qty INT UNSIGNED NOT NULL DEFAULT 100000,
+ description TEXT NULL,
+ active TINYINT(1) NOT NULL DEFAULT 1,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS orders (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NOT NULL,
+ service_id BIGINT UNSIGNED NOT NULL,
+ provider_order_id VARCHAR(100) NULL,
+ link TEXT NOT NULL,
+ quantity INT UNSIGNED NOT NULL,
+ charge DECIMAL(12,2) NOT NULL,
+ status VARCHAR(40) NOT NULL DEFAULT 'Pending',
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ INDEX(user_id),
+ CONSTRAINT fk_orders_user FOREIGN KEY(user_id) REFERENCES users(id),
+ CONSTRAINT fk_orders_service FOREIGN KEY(service_id) REFERENCES services(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS payment_requests (
+ id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id BIGINT UNSIGNED NOT NULL,
+ method ENUM('bkash','nagad') NOT NULL,
+ amount DECIMAL(12,2) NOT NULL,
+ sender_number VARCHAR(30) NOT NULL,
+ transaction_id VARCHAR(100) NOT NULL,
+ status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ reviewed_at TIMESTAMP NULL,
+ INDEX(user_id),
+ UNIQUE KEY unique_transaction_id (transaction_id),
+ CONSTRAINT fk_payments_user FOREIGN KEY(user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO settings(setting_key,setting_value) VALUES
+('provider_url','https://my.smmgen.com/api/v2'),
+('provider_key',''),
+('markup_percent','20'),
+('bkash_number',''),
+('nagad_number',''),
+('site_notice','Welcome to RS SMM BD');
